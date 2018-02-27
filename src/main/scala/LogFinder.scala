@@ -2,9 +2,10 @@ import scala.io.Source
 
 object LogFinder extends App {
 
-  var results = Seq[String]()
-  time {
-    results = getResult("1234567890", 3, 3)
+  private final val filepath = "./data/test.log"
+
+  var results = time {
+    getResult("1234567890", 3, 3)
   }
   results.foreach {
     println
@@ -12,15 +13,15 @@ object LogFinder extends App {
 
 
   def getResult(pattern: String, line_before: Int, line_after: Int): Seq[String] = {
-    var result = Seq[String]()
-    val fileContent = getFileContent("./data/test.log")
+    val fileContent = getFileContent(filepath)
     val fileSeq = convertContentToSeq(fileContent)
-    for ((line, index) <- fileSeq.zipWithIndex) {
-      if (isLineContains(line, pattern)) {
-        result = fileSeq.slice(index - line_before, index + line_after + 1)
-      }
-    }
-    result
+
+    val result = for {
+      (line, index) <- fileSeq.zipWithIndex if isLineContains(line, pattern)
+    }  yield fileSeq.slice(index - line_before, index + line_after + 1)
+
+    result flatten
+
   }
 
   def isLineContains(line: String, pattern: String): Boolean = {
@@ -35,9 +36,8 @@ object LogFinder extends App {
     Source.fromFile(filename).getLines()
   }
 
-  private
 
-  def time[R](block: => R): R = {
+  private def time[R](block: => R): R = {
     val t0 = System.currentTimeMillis()
     val result = block // call-by-name
     val t1 = System.currentTimeMillis()
